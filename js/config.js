@@ -6,7 +6,7 @@ const CONFIG = {
     },
     // 生产环境配置
     production: {
-        API_BASE_URL: 'https://server.bg2fou.top:50331/api'  // 您的服务器API地址 (使用HTTPS)
+        API_BASE_URL: 'https://volunteer.bg2fou.top:50331/api'  // 您的服务器API地址 (使用HTTPS)
     }
 };
 
