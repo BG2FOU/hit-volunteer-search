@@ -7,13 +7,15 @@ class VolunteerAPI {
     // 通用请求方法
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
-        const defaultOptions = {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        };
+        const headers = { ...(options.headers || {}) };
 
-        const config = { ...defaultOptions, ...options };
+        // 只有在有请求体时才设置JSON头，避免GET触发预检
+        const hasBody = options.body !== undefined && options.body !== null;
+        if (hasBody && !headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        const config = { ...options, headers };
 
         try {
             const response = await fetch(url, config);
