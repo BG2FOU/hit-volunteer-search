@@ -14,7 +14,7 @@
 2. 选择 "New repository"
 3. 填写仓库信息：
    - **Repository name**: `hit-volunteer-search` (或您喜欢的名字)
-   - **Description**: `HIT志愿时长查询系统前端页面`
+   - **Description**: `HIT-Volunteer志愿时长查询系统前端页面`
    - **Public**: 选择Public（GitHub Pages需要）
    - **Add README**: 不勾选（我们已经准备好了）
 
