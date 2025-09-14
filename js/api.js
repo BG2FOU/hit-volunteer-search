@@ -9,9 +9,11 @@ class VolunteerAPI {
         const url = `${this.baseURL}${endpoint}`;
         const headers = { ...(options.headers || {}) };
 
-        // 只有在有请求体时才设置JSON头，避免GET触发预检
+        // 只有在POST请求且有请求体时才设置JSON头
         const hasBody = options.body !== undefined && options.body !== null;
-        if (hasBody && !headers['Content-Type']) {
+        const isPost = options.method === 'POST';
+        
+        if (hasBody && isPost && !headers['Content-Type']) {
             headers['Content-Type'] = 'application/json';
         }
 
