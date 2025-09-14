@@ -2,6 +2,28 @@
 class VolunteerAPI {
     constructor() {
         this.baseURL = window.API_BASE_URL;
+        this.timeout = 30000; // 30秒超时
+    }
+
+    // 带超时的fetch请求
+    async fetchWithTimeout(url, options = {}) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+        
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            return response;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('请求超时，请检查网络连接');
+            }
+            throw error;
+        }
     }
 
     // 通用请求方法
@@ -11,22 +33,53 @@ class VolunteerAPI {
             headers: {
                 'Content-Type': 'application/json',
             },
+            mode: 'cors', // 明确指定CORS模式
+            credentials: 'omit' // 移动端不发送凭据，避免CORS问题
         };
 
         const config = { ...defaultOptions, ...options };
 
         try {
-            const response = await fetch(url, config);
+            console.log(`🚀 API请求: ${url}`);
+            console.log(`📱 用户代理: ${navigator.userAgent}`);
+            console.log(`🌐 请求配置:`, config);
+            
+            const response = await this.fetchWithTimeout(url, config);
+            
+            console.log(`📡 响应状态: ${response.status} ${response.statusText}`);
+            console.log(`📋 响应头部:`, Object.fromEntries(response.headers.entries()));
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                const errorMsg = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+                console.error(`❌ API错误: ${errorMsg}`);
+                throw new Error(errorMsg);
             }
 
-            return await response.json();
+            const data = await response.json();
+            console.log(`✅ API响应成功:`, data);
+            return data;
         } catch (error) {
-            console.error('API请求失败:', error);
-            throw error;
+            console.error('❌ API请求失败:', error);
+            
+            // 提供更友好的错误信息
+            let userMessage = '网络请求失败';
+            if (error.message.includes('timeout') || error.message.includes('超时')) {
+                userMessage = '请求超时，请检查网络连接';
+            } else if (error.message.includes('Failed to fetch')) {
+                userMessage = '无法连接到服务器，请检查网络连接或尝试刷新页面';
+            } else if (error.message.includes('CORS')) {
+                userMessage = '跨域请求被阻止，请联系管理员';
+            } else if (error.message.includes('certificate') || error.message.includes('SSL')) {
+                userMessage = 'SSL证书错误，请检查网络设置';
+            }
+            
+            // 在移动端显示更详细的错误信息
+            if (/Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
+                alert(`移动端错误详情:\n${error.message}\n\n建议: ${userMessage}`);
+            }
+            
+            throw new Error(userMessage);
         }
     }
 
