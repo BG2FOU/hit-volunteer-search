@@ -13,8 +13,9 @@ body {
 }
 
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 95%;
+    min-width: 1400px;
+    margin: 20px auto;
     padding: 20px;
     background-color: white;
     border-radius: 8px;
@@ -29,13 +30,20 @@ body {
     border-radius: 8px;
 }
 
+/* 使用 flex 布局，使桌面端在一行，移动端可换行堆叠 */
+.search-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
 .search-box input {
     padding: 10px;
-    margin-right: 10px;
-    width: 220px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    width: 220px; /* 默认桌面宽度 */
 }
 
 .search-box button {
@@ -48,6 +56,8 @@ body {
     font-size: 14px;
     transition: background-color 0.3s;
 }
+
+
 
 .search-box button:hover {
     background: #003d54;
@@ -70,6 +80,7 @@ th, td {
     border: 1px solid #ddd;
     padding: 12px;
     text-align: left;
+    white-space: nowrap; /* 防止表头和单元格内容换行 */
 }
 
 th {
@@ -159,12 +170,18 @@ textarea {
         margin: 10px;
         padding: 15px;
     }
-    
-    .search-box input {
-        width: 100%;
-        margin: 5px 0;
+    /* 覆盖桌面上设定的 min-width，避免移动端出现横向滚动 */
+    .container {
+        min-width: 0;
+        max-width: 100%;
     }
-    
+    /* 在窄屏上让所有项成为块级并占满宽度，保证对齐 */
+    .search-box {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-box input,
     .search-box button {
         width: 100%;
         margin: 5px 0;

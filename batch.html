@@ -49,6 +49,10 @@
                                 style="background: #009de0; color: white; padding:6px 12px; border:none; cursor:pointer; border-radius: 4px;">
                             复制统计结果
                         </button>
+                        <button onclick="copyAllDetails()"
+                                style="background: #009de0; color: white; padding:6px 12px; border:none; cursor:pointer; border-radius: 4px; margin-left: 10px;">
+                            复制详细结果
+                        </button>
                     </td>
                 </tr>
             </tfoot>
@@ -198,11 +202,16 @@
                 <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
                     <thead>
                         <tr style="background-color: #f2f2f2;">
-                            <th style="border: 1px solid #ddd; padding: 8px;">活动名称</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">时长</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">日期</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">区域</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">组织单位</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿者姓名</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿者所在学院</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿者学号</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务时长</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务活动名称</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务学期</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务日期</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务区域</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务详细地址</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">活动组织单位</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -211,10 +220,15 @@
             data.details.forEach(detail => {
                 tableHTML += `
                     <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务活动名称']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿者姓名']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿者所在学院']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿者学号']}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务时长']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务活动名称']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务学期']}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务日期']}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务区域']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务详细地址']}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${detail['活动组织单位']}</td>
                     </tr>
                 `;
@@ -233,6 +247,58 @@
                     document.body.removeChild(modal);
                 }
             };
+        }
+
+        // 复制详细结果
+        async function copyAllDetails() {
+            const tbody = document.getElementById('resultsBody');
+            if (tbody.children.length === 0 || tbody.textContent.includes('请输入批量查询内容')) {
+                utils.showError('没有可复制的详细结果');
+                return;
+            }
+
+            const studentIds = Array.from(tbody.querySelectorAll('button[onclick^="showDetails"]'))
+                                  .map(btn => btn.getAttribute('onclick').match(/'([^']+)'/)[1]);
+
+            if (studentIds.length === 0) {
+                utils.showError('没有可复制的详细结果');
+                return;
+            }
+
+            utils.showSuccess('正在准备详细数据，请稍候...');
+
+            let allDetailsText = '志愿者姓名\t志愿者所在学院\t志愿者学号\t志愿服务时长\t志愿服务活动名称\t志愿服务学期\t志愿服务日期\t志愿服务区域\t志愿服务详细地址\t活动组织单位\n';
+            
+            try {
+                for (const studentId of studentIds) {
+                    const data = await volunteerAPI.getDetails(studentId);
+                    data.details.forEach(detail => {
+                        allDetailsText += [
+                            detail['志愿者姓名'],
+                            detail['志愿者所在学院'],
+                            detail['志愿者学号'],
+                            detail['志愿服务时长'],
+                            detail['志愿服务活动名称'],
+                            detail['志愿服务学期'],
+                            detail['志愿服务日期'],
+                            detail['志愿服务区域'],
+                            detail['志愿服务详细地址'],
+                            detail['活动组织单位']
+                        ].join('\t') + '\n';
+                    });
+                }
+
+                const textarea = document.createElement('textarea');
+                textarea.value = allDetailsText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                utils.showSuccess('所有详细结果已复制到剪贴板！');
+            } catch (error) {
+                utils.showError('复制详细结果失败: ' + error.message);
+            }
         }
 
         // 复制统计结果
