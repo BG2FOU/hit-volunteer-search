@@ -17,7 +17,7 @@
 
 ## 🚀 本地开发
 
-1. 确保后端API服务正在运行（默认 `http://localhost:5033`）
+1. 确保后端API服务正在运行（默认 `http://localhost:50331`）
 2. 直接在浏览器中打开 `index.html` 即可
 
 ```bash
@@ -33,10 +33,10 @@ API地址配置在 `js/config.js` 文件中：
 ```javascript
 const CONFIG = {
     development: {
-        API_BASE_URL: 'http://localhost:5033/api'  // 本地开发
+        API_BASE_URL: 'http://localhost:50331/api'  // 本地开发
     },
     production: {
-        API_BASE_URL: 'http://*.*.*.*:5033/api'   // 生产环境
+        API_BASE_URL: 'http://*.*.*.*:50331/api'   // 生产环境
     }
 };
 ```
