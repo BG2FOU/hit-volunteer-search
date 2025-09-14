@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量查询志愿时长</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <button onclick="location.href='index.html'" 
+                style="background: #005375; color: white; padding:8px 15px; border:none; cursor:pointer; border-radius: 4px; margin-bottom: 20px;">
+            ← 返回普通查询
+        </button>
+        
+        <h1>批量查询</h1>
+        
+        <div class="search-box">
+            <textarea id="batchInput" placeholder="请输入查询内容，每行一个：&#10;格式示例：&#10;2022110001&#10;张三&#10;李四 2022110001"></textarea>
+            <button onclick="doBatchSearch()" id="batchSearchBtn">批量查询</button>
+        </div>
+        
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="successMessage" class="success" style="display: none;"></div>
+
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>志愿者姓名</th>
+                    <th>志愿者学号</th>
+                    <th>个人总时长（小时）</th>
+                    <th>详细信息</th>
+                </tr>
+            </thead>
+            <tbody id="resultsBody">
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #666; padding: 40px;">
+                        请输入批量查询内容
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="2">集体总时长</td>
+                    <td id="grandTotal">0</td>
+                    <td>
+                        <button onclick="copySummaryResults()" 
+                                style="background: #009de0; color: white; padding:6px 12px; border:none; cursor:pointer; border-radius: 4px;">
+                            复制统计结果
+                        </button>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- 引入脚本 -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 绑定Ctrl+Enter快速搜索
+            document.getElementById('batchInput').addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    doBatchSearch();
+                }
+            });
+        });
+
+        // 执行批量搜索
+        async function doBatchSearch() {
+            const input = document.getElementById('batchInput').value.trim();
+            
+            if (!input) {
+                utils.showError('请输入查询内容');
+                return;
+            }
+
+            // 解析查询输入
+            const queries = utils.parseBatchInput(input);
+            
+            if (queries.length === 0) {
+                utils.showError('请输入有效的查询内容');
+                return;
+            }
+
+            // 隐藏错误信息
+            utils.hideError();
+            
+            // 显示加载状态
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '<tr><td colspan="4" class="loading">正在处理批量查询</td></tr>';
+            document.getElementById('batchSearchBtn').disabled = true;
+
+            try {
+                const data = await volunteerAPI.batchSearch(queries);
+                displayBatchResults(data);
+            } catch (error) {
+                utils.showError(error.message);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">查询失败</td></tr>';
+            } finally {
+                document.getElementById('batchSearchBtn').disabled = false;
+            }
+        }
+
+        // 显示批量查询结果
+        function displayBatchResults(data) {
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+
+            if (!data.results || data.results.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">未找到任何记录</td></tr>';
+                document.getElementById('grandTotal').textContent = '0';
+                return;
+            }
+
+            data.results.forEach(result => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${result.name}</td>
+                    <td>${result.student_id}</td>
+                    <td>${result.total_duration.toFixed(1)}</td>
+                    <td>
+                        <button onclick="showDetails('${result.student_id}')" 
+                                style="background: #007bff; color: white; padding:4px 8px; border:none; cursor:pointer; border-radius: 3px; font-size: 12px;">
+                            查看详情
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('grandTotal').textContent = data.grand_total.toFixed(1);
+        }
+
+        // 显示详细信息
+        async function showDetails(studentId) {
+            try {
+                const data = await volunteerAPI.getDetails(studentId);
+                showDetailsModal(data);
+            } catch (error) {
+                utils.showError('获取详细信息失败: ' + error.message);
+            }
+        }
+
+        // 显示详情模态框
+        function showDetailsModal(data) {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 1000;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            `;
+
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                max-width: 90%;
+                max-height: 80%;
+                overflow: auto;
+                position: relative;
+            `;
+
+            // 关闭按钮
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '×';
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #666;
+            `;
+            closeBtn.onclick = () => document.body.removeChild(modal);
+
+            // 详情表格
+            const detailsTable = document.createElement('table');
+            detailsTable.style.cssText = 'width: 100%; border-collapse: collapse;';
+            
+            let tableHTML = `
+                <h3>${data.name} 的志愿服务详情</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 8px;">活动名称</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">时长</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">日期</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">区域</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">组织单位</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.details.forEach(detail => {
+                tableHTML += `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务活动名称']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务时长']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务日期']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务区域']}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['活动组织单位']}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+
+            modalContent.innerHTML = tableHTML;
+            modalContent.appendChild(closeBtn);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // 点击背景关闭
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            };
+        }
+
+        // 复制统计结果
+        function copySummaryResults() {
+            const table = document.getElementById('resultsTable');
+            const tbody = document.getElementById('resultsBody');
+            
+            // 检查是否有数据
+            if (tbody.children.length === 0 || 
+                tbody.textContent.includes('请输入批量查询内容') || 
+                tbody.textContent.includes('未找到任何记录')) {
+                utils.showError('没有可复制的结果');
+                return;
+            }
+            
+            utils.copyToClipboard(table);
+        }
+    </script>
+</body>
+</html>

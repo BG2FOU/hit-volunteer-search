@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>志愿时长查询系统</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>志愿时长查询系统</h1>
+        
+        <div class="search-box">
+            <input type="text" id="nameInput" placeholder="输入志愿者姓名">
+            <input type="text" id="idInput" placeholder="输入志愿者学号">
+            <button onclick="doSearch()" id="searchBtn">查询</button>
+            <button onclick="location.href='batch.html'" style="margin-left:20px; background: #005375;">进入批量查询</button>
+        </div>
+        
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="successMessage" class="success" style="display: none;"></div>
+        
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>志愿者姓名</th>
+                    <th>志愿者所在学院</th>
+                    <th>志愿者学号</th>
+                    <th>志愿服务时长</th>
+                    <th>志愿服务活动名称</th>
+                    <th>志愿服务学期</th>
+                    <th>志愿服务日期</th>
+                    <th>志愿服务区域</th>
+                    <th>志愿服务详细地址</th>
+                    <th>活动组织单位</th>
+                </tr>
+            </thead>
+            <tbody id="resultsBody">
+                <tr>
+                    <td colspan="10" style="text-align: center; color: #666; padding: 40px;">
+                        请输入查询条件开始搜索
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="total">
+            总志愿服务时长：<span id="totalHours">0</span> 小时
+            <button onclick="copyEntireResults()" 
+                    style="margin-left:20px; background: #005375; color: white; padding:8px 15px; border:none; cursor:pointer; border-radius: 4px;">
+                复制全部结果
+            </button>
+        </div>
+    </div>
+
+    <!-- 引入脚本 -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 绑定回车键搜索
+            document.getElementById('nameInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') doSearch();
+            });
+            
+            document.getElementById('idInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') doSearch();
+            });
+        });
+
+        // 执行搜索
+        async function doSearch() {
+            const name = document.getElementById('nameInput').value.trim();
+            const id = document.getElementById('idInput').value.trim();
+            
+            // 验证输入
+            if (!name && !id) {
+                utils.showError('至少需要提供姓名或学号中的一个参数');
+                return;
+            }
+            
+            // 隐藏之前的错误信息
+            utils.hideError();
+            
+            // 显示加载状态
+            utils.showLoading();
+            document.getElementById('searchBtn').disabled = true;
+            
+            try {
+                const data = await volunteerAPI.search(name, id);
+                displayResults(data);
+            } catch (error) {
+                utils.showError(error.message);
+                // 清空结果
+                document.getElementById('resultsBody').innerHTML = 
+                    '<tr><td colspan="10" style="text-align: center; color: #666;">查询失败</td></tr>';
+            } finally {
+                document.getElementById('searchBtn').disabled = false;
+            }
+        }
+
+        // 显示搜索结果
+        function displayResults(data) {
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+            
+            if (!data.results || data.results.length === 0) {
+                tbody.innerHTML = 
+                    '<tr><td colspan="10" style="text-align: center; color: #666;">未找到相关记录</td></tr>';
+                document.getElementById('totalHours').textContent = '0';
+                return;
+            }
+            
+            data.results.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row['志愿者姓名']}</td>
+                    <td>${row['志愿者所在学院']}</td>
+                    <td>${row['志愿者学号']}</td>
+                    <td>${row['志愿服务时长']}</td>
+                    <td>${row['志愿服务活动名称']}</td>
+                    <td>${row['志愿服务学期']}</td>
+                    <td>${row['志愿服务日期']}</td>
+                    <td>${row['志愿服务区域']}</td>
+                    <td>${row['志愿服务详细地址']}</td>
+                    <td>${row['活动组织单位']}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('totalHours').textContent = data.total_duration.toFixed(1);
+        }
+
+        // 复制全部结果
+        function copyEntireResults() {
+            const table = document.getElementById('resultsTable');
+            const tbody = document.getElementById('resultsBody');
+            
+            // 检查是否有数据
+            if (tbody.children.length === 0 || 
+                tbody.textContent.includes('请输入查询条件') || 
+                tbody.textContent.includes('未找到相关记录')) {
+                utils.showError('没有可复制的结果');
+                return;
+            }
+            
+            utils.copyToClipboard(table);
+        }
+    </script>
+</body>
+</html>

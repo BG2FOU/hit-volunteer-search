@@ -1,0 +1,32 @@
+{
+  "name": "hit-volunteer-search",
+  "version": "2.0.0",
+  "description": "HIT-Volunteer志愿时长查询系统前端静态页面",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8080",
+    "dev": "python -m http.server 3000",
+    "build": "echo 'No build process needed for static files'",
+    "deploy": "echo 'Please push to GitHub and enable Pages in repository settings'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BG2FOU/hit-volunteer-search.git"
+  },
+  "keywords": [
+    "volunteer",
+    "query",
+    "hit",
+    "frontend",
+    "static",
+    "github-pages"
+  ],
+  "author": "BG2FOU",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/BG2FOU/hit-volunteer-search/issues"
+  },
+  "homepage": "https://bg2fou.github.io/hit-volunteer-search",
+  "devDependencies": {},
+  "dependencies": {}
+}

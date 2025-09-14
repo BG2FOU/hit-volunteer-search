@@ -1,0 +1,45 @@
+# GitHub Pages站点配置
+# 基于Jekyll构建，但我们使用纯静态文件
+
+# 基本设置
+title: "HIT-Volunteer志愿时长查询系统"
+description: "哈尔滨工业大学青年志愿者协会志愿服务时长查询系统前端页面"
+baseurl: "" # GitHub Pages会自动设置
+url: "https://bg2fou.github.io" # 您的GitHub Pages域名
+
+# 构建设置
+markdown: kramdown
+highlighter: rouge
+
+# 插件
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# 排除文件
+exclude:
+  - README.md
+  - package.json
+  - node_modules/
+  - .git/
+  - .gitignore
+
+# 包含文件（确保这些文件被包含在构建中）
+include:
+  - _headers
+  - _redirects
+
+# 静态文件设置
+collections:
+  pages:
+    output: true
+    permalink: /:name/
+
+# 安全设置
+safe: true
+incremental: false
+lsi: false
+
+# 其他设置
+timezone: Asia/Shanghai
+encoding: utf-8
