@@ -76,11 +76,76 @@ table {
     background-color: white;
 }
 
+/* 使用固定表格布局，防止超出容器并让单元格内容换行 */
+table {
+    table-layout: fixed;
+}
+
 th, td {
     border: 1px solid #ddd;
     padding: 12px;
     text-align: left;
-    white-space: nowrap; /* 防止表头和单元格内容换行 */
+}
+
+/* 表头尽量不换行，保持标题整齐 */
+th {
+    white-space: nowrap;
+}
+
+/* 单元格内容允许换行，并在必要时按词边界断行 */
+td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* 额外的可换行表格类，用于模态详情或其它需要强制换行的表格 */
+.wrap-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.wrap-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.wrap-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* 页面特定：确保学号列在不同页面按列位置单行显示并在溢出时用省略号 */
+.index-page .wrap-table th:nth-child(3),
+.index-page .wrap-table td:nth-child(3) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 仅对批量页主表（#resultsTable）的第2列（学号）强制单行省略号 */
+.batch-page #resultsTable.wrap-table th:nth-child(2),
+.batch-page #resultsTable.wrap-table td:nth-child(2) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 模态详情表：允许表头换行，学号（第3列）单行省略号 */
+.batch-page .details-table th {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.batch-page .details-table th:nth-child(3),
+.batch-page .details-table td:nth-child(3) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 th {
@@ -170,11 +235,6 @@ textarea {
         margin: 10px;
         padding: 15px;
     }
-    /* 覆盖桌面上设定的 min-width，避免移动端出现横向滚动 */
-    .container {
-        min-width: 0;
-        max-width: 100%;
-    }
     /* 在窄屏上让所有项成为块级并占满宽度，保证对齐 */
     .search-box {
         flex-direction: column;
@@ -193,5 +253,18 @@ textarea {
     
     th, td {
         padding: 8px 4px;
+    }
+    
+    /* 在移动端允许表格内容以及表头自动换行，避免截断或横向滚动 */
+    th {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    td {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 }

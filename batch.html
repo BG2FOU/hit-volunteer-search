@@ -7,7 +7,7 @@
     <link rel="icon" href="volunteer.ico">
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
+<body class="batch-page">
     <div class="container">
         <button onclick="location.href='index.html'" 
                 style="background: #005375; color: white; padding:8px 15px; border:none; cursor:pointer; border-radius: 4px; margin-bottom: 20px;">
@@ -33,6 +33,12 @@
                     <th>详细信息</th>
                 </tr>
             </thead>
+            <colgroup>
+                <col style="width:25%"> <!-- 姓名 (微调更窄) -->
+                <col style="width:22%"> <!-- 学号 (加大以保证一行显示) -->
+                <col style="width:12%"> <!-- 总时长 -->
+                <col style="width:45%"> <!-- 详细按钮/说明 (稍宽以容纳按钮/说明) -->
+            </colgroup>
             <tbody id="resultsBody">
                 <tr>
                     <td colspan="4" style="text-align: center; color: #666; padding: 40px;">
@@ -60,9 +66,9 @@
     </div>
 
     <!-- 引入脚本 -->
-    <script src="js/config.js?v=20250914-5"></script>
-    <script src="js/api.js?v=20250914-5"></script>
-    
+    <script src="js/config.js?v=20250915-1"></script>
+    <script src="js/api.js?v=20250915-1"></script>
+
     <script>
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -195,11 +201,23 @@
 
             // 详情表格
             const detailsTable = document.createElement('table');
-            detailsTable.style.cssText = 'width: 100%; border-collapse: collapse;';
+            detailsTable.className = 'wrap-table details-table';
             
             let tableHTML = `
                 <h3>${data.name} 的志愿服务详情</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <table class="wrap-table details-table" style="margin-top: 15px;">
+                    <colgroup>
+                        <col style="width:8%">  <!-- 姓名 -->
+                        <col style="width:12%"> <!-- 学院 -->
+                        <col style="width:9%">  <!-- 学号-->
+                        <col style="width:9%">  <!-- 时长 -->
+                        <col style="width:18%"> <!-- 活动名称-->
+                        <col style="width:9%">  <!-- 学期 -->
+                        <col style="width:9%">  <!-- 日期 -->
+                        <col style="width:9%">  <!-- 区域 -->
+                        <col style="width:12%"> <!-- 详细地址-->
+                        <col style="width:9%">  <!-- 组织单位-->
+                    </colgroup>
                     <thead>
                         <tr style="background-color: #f2f2f2;">
                             <th style="border: 1px solid #ddd; padding: 8px;">志愿者姓名</th>
