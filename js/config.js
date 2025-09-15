@@ -6,10 +6,15 @@ const CONFIG = {
     },
     // 生产环境配置
     production: {
-        // 主要地址：直接IP访问（已验证可用）
-        API_BASE_URL: 'http://59.110.114.69:50331/api',
-        // 备用地址：域名访问（如果服务器修复）
-        API_BASE_URL_FALLBACK: 'https://search.bg2fou.top/api'
+        // 主要地址：HTTPS域名访问（优先使用HTTPS避免混合内容问题）
+        API_BASE_URL: 'https://search.bg2fou.top/api',
+        // 备用地址列表：按优先级尝试
+        API_BASE_URL_FALLBACK: [
+            'https://server.bg2fou.top:50331//api',
+            'https://59.110.114.69:50331/api',
+            'http://server.bg2fou.top:50331//api',
+            'http://59.110.114.69:50331/api'
+        ]
     }
 };
 

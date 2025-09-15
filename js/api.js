@@ -5,11 +5,17 @@ class VolunteerAPI {
         this.fallbackURL = window.API_BASE_URL_FALLBACK;
     }
 
-    // 通用请求方法 - 支持备用URL
+    // 通用请求方法 - 支持备用URL数组
     async request(endpoint, options = {}) {
         const urls = [this.baseURL];
-        if (this.fallbackURL && this.fallbackURL !== this.baseURL) {
-            urls.push(this.fallbackURL);
+        
+        // 处理备用URL（可能是字符串或数组）
+        if (this.fallbackURL) {
+            if (Array.isArray(this.fallbackURL)) {
+                urls.push(...this.fallbackURL.filter(url => url !== this.baseURL));
+            } else if (this.fallbackURL !== this.baseURL) {
+                urls.push(this.fallbackURL);
+            }
         }
         
         const headers = { ...(options.headers || {}) };
@@ -73,6 +79,37 @@ class VolunteerAPI {
         }
         
         console.error('🚫 所有API尝试都失败:', lastError);
+        
+        // 如果是HTTPS页面且所有HTTPS端点都失败，提供HTTP降级选项
+        if (window.location.protocol === 'https:' && 
+            lastError.message.includes('Failed to fetch') || 
+            lastError.message.includes('ERR_CONNECTION_RESET')) {
+            
+            const httpFallback = 'http://59.110.114.69:50331/api' + endpoint;
+            const userConfirm = confirm(
+                '所有HTTPS API端点都无法访问。\n\n' +
+                '是否尝试使用HTTP端点？\n' +
+                '（注意：这可能会显示安全警告）\n\n' +
+                '点击"确定"将尝试HTTP连接，点击"取消"放弃请求。'
+            );
+            
+            if (userConfirm) {
+                try {
+                    console.log(`📡 尝试HTTP降级: ${httpFallback}`);
+                    const response = await fetch(httpFallback, config);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    console.log(`✅ HTTP降级成功: ${httpFallback}`);
+                    return await response.json();
+                } catch (httpError) {
+                    console.error('❌ HTTP降级也失败:', httpError.message);
+                    throw new Error(`HTTPS和HTTP端点都无法访问: ${httpError.message}`);
+                }
+            }
+        }
+        
         throw lastError;
     }
 
