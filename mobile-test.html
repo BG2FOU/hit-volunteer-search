@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动端API连接测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>移动端API连接测试</h1>
+        
+        <div class="test-section">
+            <h3>环境信息</h3>
+            <div id="env-info" class="test-result info">
+                检测中...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>API连接测试</h3>
+            <button onclick="testConnection()">测试API连接</button>
+            <button onclick="testSearch()">测试搜索功能</button>
+            <button onclick="clearLog()">清除日志</button>
+            <div id="test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>详细日志</h3>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script src="js/config.js?v=20250915-1"></script>
+    <script src="js/api.js?v=20250915-1"></script>
+    <script>
+        const api = new VolunteerAPI();
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('log');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
+        }
+
+        function showResult(message, isError = false) {
+            const resultsElement = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${isError ? 'error' : 'success'}`;
+            resultDiv.textContent = message;
+            resultsElement.appendChild(resultDiv);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('test-results').innerHTML = '';
+        }
+
+        // 显示环境信息
+        function showEnvironmentInfo() {
+            const envInfo = document.getElementById('env-info');
+            const info = {
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Online': navigator.onLine,
+                'API Base URL': window.API_BASE_URL,
+                'Current URL': window.location.href,
+                'Protocol': window.location.protocol,
+                'Hostname': window.location.hostname
+            };
+            
+            let infoHtml = '';
+            for (const [key, value] of Object.entries(info)) {
+                infoHtml += `<strong>${key}:</strong> ${value}<br>`;
+            }
+            envInfo.innerHTML = infoHtml;
+            
+            log('环境信息已显示');
+        }
+
+        // 测试API连接
+        async function testConnection() {
+            log('开始测试API连接...');
+            try {
+                const response = await fetch(window.API_BASE_URL.replace('/api', ''), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('API连接成功', 'success');
+                    log(`服务器响应: ${JSON.stringify(data)}`);
+                    showResult('✅ API连接测试成功');
+                } else {
+                    log(`API连接失败: HTTP ${response.status}`, 'error');
+                    showResult('❌ API连接测试失败', true);
+                }
+            } catch (error) {
+                log(`API连接错误: ${error.message}`, 'error');
+                showResult(`❌ API连接测试失败: ${error.message}`, true);
+            }
+        }
+
+        // 测试搜索功能
+        async function testSearch() {
+            log('开始测试搜索功能...');
+            try {
+                const result = await api.search('', '2022110001');
+                log('搜索功能测试成功', 'success');
+                log(`搜索结果: 找到${result.count}条记录，总时长${result.total_hours}小时`);
+                showResult(`✅ 搜索功能测试成功：找到${result.count}条记录`);
+            } catch (error) {
+                log(`搜索功能测试失败: ${error.message}`, 'error');
+                showResult(`❌ 搜索功能测试失败: ${error.message}`, true);
+            }
+        }
+
+        // 网络状态监听
+        window.addEventListener('online', () => {
+            log('网络连接已恢复', 'success');
+        });
+
+        window.addEventListener('offline', () => {
+            log('网络连接已断开', 'error');
+        });
+
+        // 页面加载时显示环境信息
+        document.addEventListener('DOMContentLoaded', function() {
+            showEnvironmentInfo();
+            log('移动端测试页面已加载');
+        });
+    </script>
+</body>
+</html>

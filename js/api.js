@@ -17,21 +17,52 @@ class VolunteerAPI {
             headers['Content-Type'] = 'application/json';
         }
 
-        const config = { ...options, headers };
+        const config = { 
+            ...options, 
+            headers,
+            // 添加超时设置，特别针对移动端网络
+            timeout: 30000
+        };
 
-        try {
-            const response = await fetch(url, config);
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        // 重试机制：最多重试3次
+        let lastError;
+        const maxRetries = 3;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`API请求尝试 ${attempt}/${maxRetries}: ${url}`);
+                
+                const response = await fetch(url, config);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                console.log(`API请求成功: ${url}`);
+                return await response.json();
+            } catch (error) {
+                lastError = error;
+                console.error(`API请求失败 (尝试 ${attempt}/${maxRetries}):`, error.message);
+                
+                // 如果是网络错误且还有重试机会，等待后重试
+                if (attempt < maxRetries && (
+                    error.message.includes('Failed to fetch') ||
+                    error.message.includes('ERR_CONNECTION_RESET') ||
+                    error.message.includes('Network Error')
+                )) {
+                    console.log(`等待${attempt * 1000}ms后重试...`);
+                    await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+                    continue;
+                }
+                
+                // 如果不是网络错误或已达到最大重试次数，直接抛出错误
+                break;
             }
-
-            return await response.json();
-        } catch (error) {
-            console.error('API请求失败:', error);
-            throw error;
         }
+        
+        console.error('API请求最终失败:', lastError);
+        throw lastError;
     }
 
     // 单个查询
