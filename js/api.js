@@ -2,11 +2,16 @@
 class VolunteerAPI {
     constructor() {
         this.baseURL = window.API_BASE_URL;
+        this.fallbackURL = window.API_BASE_URL_FALLBACK;
     }
 
-    // 通用请求方法
+    // 通用请求方法 - 支持备用URL
     async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
+        const urls = [this.baseURL];
+        if (this.fallbackURL && this.fallbackURL !== this.baseURL) {
+            urls.push(this.fallbackURL);
+        }
+        
         const headers = { ...(options.headers || {}) };
 
         // 只有在POST请求且有请求体时才设置JSON头
@@ -20,48 +25,54 @@ class VolunteerAPI {
         const config = { 
             ...options, 
             headers,
-            // 添加超时设置，特别针对移动端网络
-            timeout: 30000
+            timeout: 15000  // 缩短超时时间
         };
 
-        // 重试机制：最多重试3次
         let lastError;
-        const maxRetries = 3;
         
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                console.log(`API请求尝试 ${attempt}/${maxRetries}: ${url}`);
-                
-                const response = await fetch(url, config);
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-                }
+        // 尝试每个URL
+        for (let urlIndex = 0; urlIndex < urls.length; urlIndex++) {
+            const baseUrl = urls[urlIndex];
+            const url = `${baseUrl}${endpoint}`;
+            console.log(`尝试API URL ${urlIndex + 1}/${urls.length}: ${url}`);
+            
+            // 每个URL尝试2次
+            for (let attempt = 1; attempt <= 2; attempt++) {
+                try {
+                    console.log(`  - 请求尝试 ${attempt}/2`);
+                    
+                    const response = await fetch(url, config);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                    }
 
-                console.log(`API请求成功: ${url}`);
-                return await response.json();
-            } catch (error) {
-                lastError = error;
-                console.error(`API请求失败 (尝试 ${attempt}/${maxRetries}):`, error.message);
-                
-                // 如果是网络错误且还有重试机会，等待后重试
-                if (attempt < maxRetries && (
-                    error.message.includes('Failed to fetch') ||
-                    error.message.includes('ERR_CONNECTION_RESET') ||
-                    error.message.includes('Network Error')
-                )) {
-                    console.log(`等待${attempt * 1000}ms后重试...`);
-                    await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-                    continue;
+                    console.log(`✅ API请求成功: ${url}`);
+                    return await response.json();
+                } catch (error) {
+                    lastError = error;
+                    console.error(`❌ API请求失败 (URL ${urlIndex + 1}, 尝试 ${attempt}):`, error.message);
+                    
+                    // 如果是第一次尝试且是网络错误，等待后重试
+                    if (attempt === 1 && (
+                        error.message.includes('Failed to fetch') ||
+                        error.message.includes('ERR_CONNECTION_RESET') ||
+                        error.message.includes('Network Error') ||
+                        error.message.includes('ERR_SSL_PROTOCOL_ERROR')
+                    )) {
+                        console.log(`  - 等待1秒后重试...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        continue;
+                    }
+                    
+                    // 如果第二次尝试也失败，尝试下一个URL
+                    break;
                 }
-                
-                // 如果不是网络错误或已达到最大重试次数，直接抛出错误
-                break;
             }
         }
         
-        console.error('API请求最终失败:', lastError);
+        console.error('🚫 所有API尝试都失败:', lastError);
         throw lastError;
     }
 
