@@ -10,9 +10,9 @@ const CONFIG = {
         API_BASE_URL: 'https://search.bg2fou.top/api',
         // 备用地址列表：按优先级尝试
         API_BASE_URL_FALLBACK: [
-            'https://server.bg2fou.top:50331//api',
+            'https://server.bg2fou.top:50331/api',
             'https://59.110.114.69:50331/api',
-            'http://server.bg2fou.top:50331//api',
+            'http://server.bg2fou.top:50331/api',
             'http://59.110.114.69:50331/api'
         ]
     }
