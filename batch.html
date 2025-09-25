@@ -9,7 +9,10 @@
 </head>
 <body class="batch-page">
     <div class="container">
-        <button class="back-btn" onclick="location.href='index.html'">← 返回普通查询</button>
+        <button onclick="location.href='index.html'" 
+                style="background: #005375; color: white; padding:8px 15px; border:none; cursor:pointer; border-radius: 4px; margin-bottom: 20px;">
+            ← 返回普通查询
+        </button>
         
         <h1>批量查询</h1>
         
@@ -21,38 +24,45 @@
         <div id="errorMessage" class="error" style="display: none;"></div>
         <div id="successMessage" class="success" style="display: none;"></div>
 
-        <div class="table-wrapper">
-            <table id="resultsTable">
-                <thead>
-                    <tr>
-                        <th>志愿者姓名</th>
-                        <th>志愿者学号</th>
-                        <th>个人总时长（小时）</th>
-                        <th>详细信息</th>
-                    </tr>
-                </thead>
-                <colgroup>
-                    <col style="width:25%">
-                    <col style="width:22%">
-                    <col style="width:12%">
-                    <col style="width:41%">
-                </colgroup>
-                <tbody id="resultsBody">
-                    <tr>
-                        <td colspan="4" style="text-align: center; color: #666; padding: 40px;">
-                            请输入批量查询内容
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="total">
-            <span>集体总时长：<span id="grandTotal">0</span> 小时</span>
-            <button onclick="copySummaryResults()">复制统计结果</button>
-            <button onclick="exportSummaryCSV()">导出统计结果为CSV</button>
-            <button onclick="copyAllDetails()">复制详细结果</button>
-            <button onclick="exportDetailsCSV()">导出详细结果为CSV</button>
-        </div>
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>志愿者姓名</th>
+                    <th>志愿者学号</th>
+                    <th>个人总时长（小时）</th>
+                    <th>详细信息</th>
+                </tr>
+            </thead>
+            <colgroup>
+                <col style="width:25%"> <!-- 姓名 (微调更窄) -->
+                <col style="width:22%"> <!-- 学号 (加大以保证一行显示) -->
+                <col style="width:12%"> <!-- 总时长 -->
+                <col style="width:45%"> <!-- 详细按钮/说明 (稍宽以容纳按钮/说明) -->
+            </colgroup>
+            <tbody id="resultsBody">
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #666; padding: 40px;">
+                        请输入批量查询内容
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="2">集体总时长</td>
+                    <td id="grandTotal">0</td>
+                    <td>
+                        <button onclick="copySummaryResults()" 
+                                style="background: #009de0; color: white; padding:6px 12px; border:none; cursor:pointer; border-radius: 4px;">
+                            复制统计结果
+                        </button>
+                        <button onclick="copyAllDetails()"
+                                style="background: #009de0; color: white; padding:6px 12px; border:none; cursor:pointer; border-radius: 4px; margin-left: 10px;">
+                            复制详细结果
+                        </button>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
 
     <!-- 引入脚本 -->
@@ -60,24 +70,6 @@
     <script src="js/api.js?v=20250915-1"></script>
 
     <script>
-        const SUMMARY_HEADERS = ['志愿者姓名', '志愿者学号', '个人总时长（小时）'];
-        const DETAIL_HEADERS = [
-            '志愿者姓名',
-            '志愿者所在学院',
-            '志愿者学号',
-            '志愿服务时长',
-            '志愿服务活动名称',
-            '志愿服务学期',
-            '志愿服务日期',
-            '志愿服务区域',
-            '志愿服务详细地址',
-            '活动组织单位'
-        ];
-
-        let latestBatchResults = [];
-        let latestGrandTotal = 0;
-        const detailCache = new Map();
-
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
             // 绑定Ctrl+Enter快速搜索
@@ -113,18 +105,12 @@
             tbody.innerHTML = '<tr><td colspan="4" class="loading">正在处理批量查询</td></tr>';
             document.getElementById('batchSearchBtn').disabled = true;
 
-            latestBatchResults = [];
-            latestGrandTotal = 0;
-            detailCache.clear();
-
             try {
                 const data = await volunteerAPI.batchSearch(queries);
                 displayBatchResults(data);
             } catch (error) {
                 utils.showError(error.message);
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">查询失败</td></tr>';
-                latestBatchResults = [];
-                latestGrandTotal = 0;
             } finally {
                 document.getElementById('batchSearchBtn').disabled = false;
             }
@@ -135,17 +121,13 @@
             const tbody = document.getElementById('resultsBody');
             tbody.innerHTML = '';
 
-            latestBatchResults = Array.isArray(data.results) ? data.results : [];
-            latestGrandTotal = Number.isFinite(data.grand_total) ? data.grand_total : 0;
-
-            if (latestBatchResults.length === 0) {
+            if (!data.results || data.results.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">未找到任何记录</td></tr>';
                 document.getElementById('grandTotal').textContent = '0';
-                latestGrandTotal = 0;
                 return;
             }
 
-            latestBatchResults.forEach(result => {
+            data.results.forEach(result => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${result.name}</td>
@@ -161,26 +143,17 @@
                 tbody.appendChild(tr);
             });
 
-            document.getElementById('grandTotal').textContent = latestGrandTotal.toFixed(1);
+            document.getElementById('grandTotal').textContent = data.grand_total.toFixed(1);
         }
 
         // 显示详细信息
         async function showDetails(studentId) {
             try {
-                const data = await getStudentDetails(studentId);
+                const data = await volunteerAPI.getDetails(studentId);
                 showDetailsModal(data);
             } catch (error) {
                 utils.showError('获取详细信息失败: ' + error.message);
             }
-        }
-
-        async function getStudentDetails(studentId) {
-            if (detailCache.has(studentId)) {
-                return detailCache.get(studentId);
-            }
-            const data = await volunteerAPI.getDetails(studentId);
-            detailCache.set(studentId, data);
-            return data;
         }
 
         // 显示详情模态框
@@ -215,15 +188,14 @@
             const closeBtn = document.createElement('button');
             closeBtn.textContent = '×';
             closeBtn.style.cssText = `
-                position: fixed;      /* 改成 fixed */
-                top: 60px;            /* 距离视口顶部 */
-                right: 60px;          /* 距离视口右侧 */
+                position: absolute;
+                top: 10px;
+                right: 15px;
                 background: none;
                 border: none;
-                font-size: 48px;
+                font-size: 24px;
                 cursor: pointer;
-                color: #FFF;
-                z-index: 1100;        /* 确保在模态框之上 */
+                color: #666;
             `;
             closeBtn.onclick = () => document.body.removeChild(modal);
 
@@ -297,7 +269,15 @@
 
         // 复制详细结果
         async function copyAllDetails() {
-            const studentIds = getStudentIdsForDetails();
+            const tbody = document.getElementById('resultsBody');
+            if (tbody.children.length === 0 || tbody.textContent.includes('请输入批量查询内容')) {
+                utils.showError('没有可复制的详细结果');
+                return;
+            }
+
+            const studentIds = Array.from(tbody.querySelectorAll('button[onclick^="showDetails"]'))
+                                  .map(btn => btn.getAttribute('onclick').match(/'([^']+)'/)[1]);
+
             if (studentIds.length === 0) {
                 utils.showError('没有可复制的详细结果');
                 return;
@@ -309,7 +289,7 @@
             
             try {
                 for (const studentId of studentIds) {
-                    const data = await getStudentDetails(studentId);
+                    const data = await volunteerAPI.getDetails(studentId);
                     data.details.forEach(detail => {
                         allDetailsText += [
                             detail['志愿者姓名'],
@@ -353,73 +333,6 @@
             }
             
             utils.copyToClipboard(table);
-        }
-
-        function getStudentIdsForDetails() {
-            if (!latestBatchResults.length) {
-                return [];
-            }
-            const uniqueIds = new Set(
-                latestBatchResults
-                    .map(item => item.student_id)
-                    .filter(id => id !== undefined && id !== null && id !== '')
-                    .map(id => String(id))
-            );
-            return Array.from(uniqueIds);
-        }
-
-        function exportSummaryCSV() {
-            if (!latestBatchResults.length) {
-                utils.showError('没有可导出的统计结果');
-                return;
-            }
-
-            const rows = latestBatchResults.map(item => {
-                const duration = typeof item.total_duration === 'number'
-                    ? item.total_duration
-                    : Number(item.total_duration) || 0;
-                return [
-                    item.name || '',
-                    item.student_id || '',
-                    duration.toFixed(1)
-                ];
-            });
-
-            rows.push(['集体总时长', '', latestGrandTotal.toFixed(1)]);
-
-            const filename = `批量查询统计结果_${utils.formatTimestampForFilename()}.csv`;
-            utils.exportToCSV(filename, SUMMARY_HEADERS, rows);
-        }
-
-        async function exportDetailsCSV() {
-            const studentIds = getStudentIdsForDetails();
-            if (studentIds.length === 0) {
-                utils.showError('没有可导出的详细结果');
-                return;
-            }
-
-            const rows = [];
-
-            try {
-                for (const studentId of studentIds) {
-                    const data = await getStudentDetails(studentId);
-                    data.details.forEach(detail => {
-                        rows.push(
-                            DETAIL_HEADERS.map(header => detail[header] ?? '')
-                        );
-                    });
-                }
-
-                if (!rows.length) {
-                    utils.showError('没有可导出的详细结果');
-                    return;
-                }
-
-                const filename = `批量查询详细结果_${utils.formatTimestampForFilename()}.csv`;
-                utils.exportToCSV(filename, DETAIL_HEADERS, rows);
-            } catch (error) {
-                utils.showError('导出详细结果失败: ' + error.message);
-            }
         }
     </script>
 </body>
