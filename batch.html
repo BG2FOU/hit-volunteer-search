@@ -70,6 +70,19 @@
             });
         });
 
+        const EXPORT_HEADERS = [
+            '志愿者姓名',
+            '志愿者所在学院',
+            '志愿者学号',
+            '志愿服务时长',
+            '志愿服务活动名称',
+            '志愿服务学期',
+            '志愿服务日期',
+            '志愿服务区域',
+            '志愿服务详细地址',
+            '活动组织单位'
+        ];
+
         // 执行批量搜索
         async function doBatchSearch() {
             const input = document.getElementById('batchInput').value.trim();
@@ -250,7 +263,15 @@
                     allDetails = allDetails.concat(data.details);
                 }
 
-                const ws = XLSX.utils.json_to_sheet(allDetails);
+                const orderedDetails = allDetails.map(item => {
+                    const orderedItem = {};
+                    EXPORT_HEADERS.forEach(key => {
+                        orderedItem[key] = item[key] ?? '';
+                    });
+                    return orderedItem;
+                });
+
+                const ws = XLSX.utils.json_to_sheet(orderedDetails, { header: EXPORT_HEADERS });
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "批量志愿服务记录");
                 XLSX.writeFile(wb, "批量志愿服务记录.xlsx");
