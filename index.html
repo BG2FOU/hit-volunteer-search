@@ -58,17 +58,16 @@
         </table>
         
         <div class="total">
-            总志愿服务时长：<span id="totalHours">0</span> 小时
-            <button onclick="copyEntireResults()" 
-                    style="margin-left:20px; background: #005375; color: white; padding:8px 15px; border:none; cursor:pointer; border-radius: 4px;">
-                复制全部结果
-            </button>
+            <span>总志愿服务时长：<span id="totalHours">0</span> 小时</span>
+            <button onclick="copyEntireResults()">复制全部结果</button>
+            <button onclick="exportToXLSX()">导出为xlsx</button>
         </div>
     </div>
 
     <!-- 引入脚本 -->
     <script src="js/config.js?v=20250915-1"></script>
     <script src="js/api.js?v=20250915-1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     
     <script>
         // 页面初始化
@@ -82,6 +81,19 @@
                 if (e.key === 'Enter') doSearch();
             });
         });
+
+        const EXPORT_HEADERS = [
+            '志愿者姓名',
+            '志愿者所在学院',
+            '志愿者学号',
+            '志愿服务时长',
+            '志愿服务活动名称',
+            '志愿服务学期',
+            '志愿服务日期',
+            '志愿服务区域',
+            '志愿服务详细地址',
+            '活动组织单位'
+        ];
 
         // 执行搜索
         async function doSearch() {
@@ -116,6 +128,7 @@
 
         // 显示搜索结果
         function displayResults(data) {
+            window.latestData = data; // 缓存结果，导出用
             const tbody = document.getElementById('resultsBody');
             tbody.innerHTML = '';
             
@@ -160,6 +173,48 @@
             }
             
             utils.copyToClipboard(table);
+        }
+
+        // 导出为 XLSX
+        function exportToXLSX() {
+            const tbody = document.getElementById('resultsBody');
+            
+            if (tbody.children.length === 0 || 
+                tbody.textContent.includes('请输入查询条件') || 
+                tbody.textContent.includes('未找到相关记录') ||
+                tbody.textContent.includes('查询失败')) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+            
+            if (!window.latestData || !window.latestData.results) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+            
+            const data = window.latestData.results;
+            const orderedData = data.map(item => {
+                const orderedItem = {};
+                EXPORT_HEADERS.forEach(key => {
+                    orderedItem[key] = item[key] ?? '';
+                });
+                return orderedItem;
+            });
+
+            // 获取输入的姓名和学号
+            const name = document.getElementById('nameInput').value.trim() || '';
+            const studentId = document.getElementById('idInput').value.trim() || '';
+            
+            // 生成时间戳
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            
+            // 构建文件名
+            const filename = `志愿时长查询结果_${name}_${studentId}_${timestamp}.xlsx`;
+
+            const ws = XLSX.utils.json_to_sheet(orderedData, { header: EXPORT_HEADERS });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "志愿服务记录");
+            XLSX.writeFile(wb, filename);
         }
     </script>
 </body>
