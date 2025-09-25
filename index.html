@@ -62,12 +62,14 @@
         <div class="total">
             <span>总志愿服务时长：<span id="totalHours">0</span> 小时</span>
             <button onclick="copyEntireResults()">复制全部结果</button>
+            <button onclick="exportToXLSX()">导出为xlsx</button>
         </div>
     </div>
 
     <!-- 引入脚本 -->
     <script src="js/config.js?v=20250915-1"></script>
     <script src="js/api.js?v=20250915-1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     
     <script>
         // 页面初始化
@@ -115,6 +117,7 @@
 
         // 显示搜索结果
         function displayResults(data) {
+            window.latestData = data; // 缓存结果，导出用
             const tbody = document.getElementById('resultsBody');
             tbody.innerHTML = '';
             
@@ -159,6 +162,30 @@
             }
             
             utils.copyToClipboard(table);
+        }
+
+        // 导出为 XLSX
+        function exportToXLSX() {
+            const tbody = document.getElementById('resultsBody');
+            
+            if (tbody.children.length === 0 || 
+                tbody.textContent.includes('请输入查询条件') || 
+                tbody.textContent.includes('未找到相关记录') ||
+                tbody.textContent.includes('查询失败')) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+            
+            if (!window.latestData || !window.latestData.results) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+            
+            const data = window.latestData.results;
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "志愿服务记录");
+            XLSX.writeFile(wb, "志愿服务记录.xlsx");
         }
     </script>
 </body>

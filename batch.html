@@ -50,12 +50,14 @@
             <span>集体总时长：<span id="grandTotal">0</span> 小时</span>
             <button onclick="copySummaryResults()">复制统计结果</button>
             <button onclick="copyAllDetails()">复制详细结果</button>
+            <button onclick="exportBatchToXLSX()">导出为xlsx</button>
         </div>
     </div>
 
     <!-- 引入脚本 -->
     <script src="js/config.js?v=20250915-1"></script>
     <script src="js/api.js?v=20250915-1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
     <script>
         // 页面初始化
@@ -77,24 +79,21 @@
                 return;
             }
 
-            // 解析查询输入
             const queries = utils.parseBatchInput(input);
-            
             if (queries.length === 0) {
                 utils.showError('请输入有效的查询内容');
                 return;
             }
 
-            // 隐藏错误信息
             utils.hideError();
             
-            // 显示加载状态
             const tbody = document.getElementById('resultsBody');
             tbody.innerHTML = '<tr><td colspan="4" class="loading">正在处理批量查询</td></tr>';
             document.getElementById('batchSearchBtn').disabled = true;
 
             try {
                 const data = await volunteerAPI.batchSearch(queries);
+                window.latestBatchData = data; // 缓存结果
                 displayBatchResults(data);
             } catch (error) {
                 utils.showError(error.message);
@@ -134,7 +133,7 @@
             document.getElementById('grandTotal').textContent = data.grand_total.toFixed(1);
         }
 
-        // 显示详细信息
+        // === 以下原有 showDetails / copyAllDetails 保持不变 ===
         async function showDetails(studentId) {
             try {
                 const data = await volunteerAPI.getDetails(studentId);
@@ -144,103 +143,21 @@
             }
         }
 
-        // 显示详情模态框
         function showDetailsModal(data) {
-            // 创建模态框
             const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0,0,0,0.5);
-                z-index: 1000;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            `;
-
+            modal.style.cssText = `position: fixed;top: 0;left: 0;width: 100%;height: 100%;background-color: rgba(0,0,0,0.5);z-index: 1000;display: flex;justify-content: center;align-items: center;`;
             const modalContent = document.createElement('div');
-            modalContent.style.cssText = `
-                background: white;
-                padding: 20px;
-                border-radius: 8px;
-                max-width: 90%;
-                max-height: 80%;
-                overflow: auto;
-                position: relative;
-            `;
-
-            // 关闭按钮
+            modalContent.style.cssText = `background: white;padding: 20px;border-radius: 8px;max-width: 90%;max-height: 80%;overflow: auto;position: relative;`;
             const closeBtn = document.createElement('button');
             closeBtn.textContent = '×';
-            closeBtn.style.cssText = `
-                position: fixed;      /* 改成 fixed */
-                top: 60px;            /* 距离视口顶部 */
-                right: 60px;          /* 距离视口右侧 */
-                background: none;
-                border: none;
-                font-size: 48px;
-                cursor: pointer;
-                color: #FFF;
-                z-index: 1100;        /* 确保在模态框之上 */
-            `;
+            closeBtn.style.cssText = `position: fixed;top: 10%;right: 10%;background: none;border: none;font-size: 48px;cursor: pointer;color: #FFF;z-index: 1100;`;
             closeBtn.onclick = () => document.body.removeChild(modal);
 
-            // 详情表格
-            const detailsTable = document.createElement('table');
-            detailsTable.className = 'wrap-table details-table';
-            
-            let tableHTML = `
-                <h3>${data.name} 的志愿服务详情</h3>
-                <table class="wrap-table details-table" style="margin-top: 15px;">
-                    <colgroup>
-                        <col style="width:8%">  <!-- 姓名 -->
-                        <col style="width:12%"> <!-- 学院 -->
-                        <col style="width:9%">  <!-- 学号-->
-                        <col style="width:9%">  <!-- 时长 -->
-                        <col style="width:18%"> <!-- 活动名称-->
-                        <col style="width:9%">  <!-- 学期 -->
-                        <col style="width:9%">  <!-- 日期 -->
-                        <col style="width:9%">  <!-- 区域 -->
-                        <col style="width:12%"> <!-- 详细地址-->
-                        <col style="width:9%">  <!-- 组织单位-->
-                    </colgroup>
-                    <thead>
-                        <tr style="background-color: #f2f2f2;">
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿者姓名</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿者所在学院</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿者学号</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务时长</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务活动名称</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务学期</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务日期</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务区域</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">志愿服务详细地址</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">活动组织单位</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
+            let tableHTML = `<h3>${data.name} 的志愿服务详情</h3><table class="wrap-table details-table" style="margin-top: 15px;">`;
+            tableHTML += `<thead><tr><th>志愿者姓名</th><th>志愿者所在学院</th><th>志愿者学号</th><th>志愿服务时长</th><th>志愿服务活动名称</th><th>志愿服务学期</th><th>志愿服务日期</th><th>志愿服务区域</th><th>志愿服务详细地址</th><th>活动组织单位</th></tr></thead><tbody>`;
             data.details.forEach(detail => {
-                tableHTML += `
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿者姓名']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿者所在学院']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿者学号']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务时长']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务活动名称']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务学期']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务日期']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务区域']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['志愿服务详细地址']}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${detail['活动组织单位']}</td>
-                    </tr>
-                `;
+                tableHTML += `<tr><td>${detail['志愿者姓名']}</td><td>${detail['志愿者所在学院']}</td><td>${detail['志愿者学号']}</td><td>${detail['志愿服务时长']}</td><td>${detail['志愿服务活动名称']}</td><td>${detail['志愿服务学期']}</td><td>${detail['志愿服务日期']}</td><td>${detail['志愿服务区域']}</td><td>${detail['志愿服务详细地址']}</td><td>${detail['活动组织单位']}</td></tr>`;
             });
-
             tableHTML += '</tbody></table>';
 
             modalContent.innerHTML = tableHTML;
@@ -248,32 +165,23 @@
             modal.appendChild(modalContent);
             document.body.appendChild(modal);
 
-            // 点击背景关闭
-            modal.onclick = (e) => {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
-            };
+            modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
         }
 
-        // 复制详细结果
         async function copyAllDetails() {
             const tbody = document.getElementById('resultsBody');
             if (tbody.children.length === 0 || tbody.textContent.includes('请输入批量查询内容')) {
                 utils.showError('没有可复制的详细结果');
                 return;
             }
-
             const studentIds = Array.from(tbody.querySelectorAll('button[onclick^="showDetails"]'))
                                   .map(btn => btn.getAttribute('onclick').match(/'([^']+)'/)[1]);
-
             if (studentIds.length === 0) {
                 utils.showError('没有可复制的详细结果');
                 return;
             }
 
             utils.showSuccess('正在准备详细数据，请稍候...');
-
             let allDetailsText = '志愿者姓名\t志愿者所在学院\t志愿者学号\t志愿服务时长\t志愿服务活动名称\t志愿服务学期\t志愿服务日期\t志愿服务区域\t志愿服务详细地址\t活动组织单位\n';
             
             try {
@@ -308,20 +216,49 @@
             }
         }
 
-        // 复制统计结果
         function copySummaryResults() {
             const table = document.getElementById('resultsTable');
             const tbody = document.getElementById('resultsBody');
-            
-            // 检查是否有数据
-            if (tbody.children.length === 0 || 
-                tbody.textContent.includes('请输入批量查询内容') || 
-                tbody.textContent.includes('未找到任何记录')) {
+            if (tbody.children.length === 0 || tbody.textContent.includes('请输入批量查询内容') || tbody.textContent.includes('未找到任何记录')) {
                 utils.showError('没有可复制的结果');
                 return;
             }
-            
             utils.copyToClipboard(table);
+        }
+
+        // === 新增：导出批量结果为 XLSX ===
+        async function exportBatchToXLSX() {
+            const tbody = document.getElementById('resultsBody');
+            if (tbody.children.length === 0 || tbody.textContent.includes('请输入批量查询内容') || tbody.textContent.includes('未找到任何记录')) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+
+            const studentIds = Array.from(tbody.querySelectorAll('button[onclick^="showDetails"]'))
+                                  .map(btn => btn.getAttribute('onclick').match(/'([^']+)'/)[1]);
+            if (studentIds.length === 0) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+
+            utils.showSuccess('正准备Excel数据，请勿重复点击');
+            let allDetails = [];
+
+            try {
+                for (const studentId of studentIds) {
+                    const data = await volunteerAPI.getDetails(studentId);
+                    allDetails = allDetails.concat(data.details);
+                }
+
+                const ws = XLSX.utils.json_to_sheet(allDetails);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "批量志愿服务记录");
+                XLSX.writeFile(wb, "批量志愿服务记录.xlsx");
+
+                utils.showSuccess('Excel文件已生成！');
+            } catch (error) {
+                utils.showError('导出失败: ' + error.message);
+            }
         }
     </script>
 </body>
