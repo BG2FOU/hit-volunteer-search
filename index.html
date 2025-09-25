@@ -84,6 +84,19 @@
             });
         });
 
+        const EXPORT_HEADERS = [
+            '志愿者姓名',
+            '志愿者所在学院',
+            '志愿者学号',
+            '志愿服务时长',
+            '志愿服务活动名称',
+            '志愿服务学期',
+            '志愿服务日期',
+            '志愿服务区域',
+            '志愿服务详细地址',
+            '活动组织单位'
+        ];
+
         // 执行搜索
         async function doSearch() {
             const name = document.getElementById('nameInput').value.trim();
@@ -182,10 +195,28 @@
             }
             
             const data = window.latestData.results;
-            const ws = XLSX.utils.json_to_sheet(data);
+            const orderedData = data.map(item => {
+                const orderedItem = {};
+                EXPORT_HEADERS.forEach(key => {
+                    orderedItem[key] = item[key] ?? '';
+                });
+                return orderedItem;
+            });
+
+            // 获取输入的姓名和学号
+            const name = document.getElementById('nameInput').value.trim() || '';
+            const studentId = document.getElementById('idInput').value.trim() || '';
+            
+            // 生成时间戳
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            
+            // 构建文件名
+            const filename = `志愿时长查询结果_${name}_${studentId}_${timestamp}.xlsx`;
+
+            const ws = XLSX.utils.json_to_sheet(orderedData, { header: EXPORT_HEADERS });
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "志愿服务记录");
-            XLSX.writeFile(wb, "志愿服务记录.xlsx");
+            XLSX.writeFile(wb, filename);
         }
     </script>
 </body>
