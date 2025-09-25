@@ -62,6 +62,7 @@
         <div class="total">
             <span>总志愿服务时长：<span id="totalHours">0</span> 小时</span>
             <button onclick="copyEntireResults()">复制全部结果</button>
+            <button onclick="exportResultsCSV()">导出结果为CSV</button>
         </div>
     </div>
 
@@ -81,6 +82,21 @@
                 if (e.key === 'Enter') doSearch();
             });
         });
+        const SEARCH_HEADERS = [
+            '志愿者姓名',
+            '志愿者所在学院',
+            '志愿者学号',
+            '志愿服务时长',
+            '志愿服务活动名称',
+            '志愿服务学期',
+            '志愿服务日期',
+            '志愿服务区域',
+            '志愿服务详细地址',
+            '活动组织单位'
+        ];
+
+        let latestSearchResults = [];
+        let latestTotalDuration = 0;
 
         // 执行搜索
         async function doSearch() {
@@ -108,6 +124,8 @@
                 // 清空结果
                 document.getElementById('resultsBody').innerHTML = 
                     '<tr><td colspan="10" style="text-align: center; color: #666;">查询失败</td></tr>';
+                latestSearchResults = [];
+                latestTotalDuration = 0;
             } finally {
                 document.getElementById('searchBtn').disabled = false;
             }
@@ -118,14 +136,18 @@
             const tbody = document.getElementById('resultsBody');
             tbody.innerHTML = '';
             
-            if (!data.results || data.results.length === 0) {
+            latestSearchResults = Array.isArray(data.results) ? data.results : [];
+            latestTotalDuration = Number.isFinite(data.total_duration) ? data.total_duration : 0;
+
+            if (latestSearchResults.length === 0) {
                 tbody.innerHTML = 
                     '<tr><td colspan="10" style="text-align: center; color: #666;">未找到相关记录</td></tr>';
                 document.getElementById('totalHours').textContent = '0';
+                latestTotalDuration = 0;
                 return;
             }
             
-            data.results.forEach(row => {
+            latestSearchResults.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${row['志愿者姓名']}</td>
@@ -142,7 +164,7 @@
                 tbody.appendChild(tr);
             });
             
-            document.getElementById('totalHours').textContent = data.total_duration.toFixed(1);
+            document.getElementById('totalHours').textContent = latestTotalDuration.toFixed(1);
         }
 
         // 复制全部结果
@@ -159,6 +181,33 @@
             }
             
             utils.copyToClipboard(table);
+        }
+
+        // 导出全部结果为CSV
+        function exportResultsCSV() {
+            if (!latestSearchResults.length) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+
+            const rows = latestSearchResults.map(row => 
+                SEARCH_HEADERS.map(header => row[header] ?? '')
+            );
+
+            const totalRow = new Array(SEARCH_HEADERS.length).fill('');
+            totalRow[0] = '总计';
+            const durationIndex = SEARCH_HEADERS.indexOf('志愿服务时长');
+            if (durationIndex !== -1) {
+                totalRow[durationIndex] = latestTotalDuration.toFixed(1);
+            }
+            rows.push(totalRow);
+
+            const rawName = document.getElementById('nameInput').value;
+            const rawId = document.getElementById('idInput').value;
+            const namePart = utils.sanitizeFilenameComponent(rawName) || '';
+            const idPart = utils.sanitizeFilenameComponent(rawId) || '';
+            const filename = `志愿服务时长查询结果_${namePart}_${idPart}_${utils.formatTimestampForFilename()}.csv`;
+            utils.exportToCSV(filename, SEARCH_HEADERS, rows);
         }
     </script>
 </body>
