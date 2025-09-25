@@ -9,7 +9,10 @@
 </head>
 <body class="batch-page">
     <div class="container">
-        <button class="back-btn" onclick="location.href='index.html'">← 返回普通查询</button>
+        <button onclick="location.href='index.html'" 
+                style="background: #005375; color: white; padding:8px 15px; border:none; cursor:pointer; border-radius: 4px; margin-bottom: 20px;">
+            ← 返回普通查询
+        </button>
         
         <h1>批量查询</h1>
         
@@ -164,7 +167,6 @@
             modalContent.style.cssText = `background: white;padding: 20px;border-radius: 8px;max-width: 90%;max-height: 80%;overflow: auto;position: relative;`;
             const closeBtn = document.createElement('button');
             closeBtn.textContent = '×';
-            closeBtn.style.cssText = `position: fixed;top: 10%;right: 10%;background: none;border: none;font-size: 48px;cursor: pointer;color: #FFF;z-index: 1100;`;
             closeBtn.onclick = () => document.body.removeChild(modal);
 
             let tableHTML = `<h3>${data.name} 的志愿服务详情</h3><table class="wrap-table details-table" style="margin-top: 15px;">`;

@@ -13,8 +13,8 @@ body {
 }
 
 .container {
-    width: 95%;
-    max-width: 1400px;
+    max-width: 95%;
+    min-width: 1400px;
     margin: 20px auto;
     padding: 20px;
     background-color: white;
@@ -22,13 +22,16 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-/* 搜索框 */
+/* 搜索框样式 */
 .search-box {
     margin: 20px 0;
     padding: 20px;
     background-color: #f9f9f9;
     border-radius: 8px;
+}
 
+/* 使用 flex 布局，使桌面端在一行，移动端可换行堆叠 */
+.search-box {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -36,17 +39,14 @@ body {
 }
 
 .search-box input {
-    flex: 1;
-    min-width: 150px;
-    max-width: 400px;  /* 桌面端不至于太长 */
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    width: 220px; /* 默认桌面宽度 */
 }
 
 .search-box button {
-    flex-shrink: 0;
     padding: 10px 20px;
     background: #005375;
     color: white;
@@ -54,9 +54,10 @@ body {
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    max-width: 400px; /* 限制最大宽度 */
     transition: background-color 0.3s;
 }
+
+
 
 .search-box button:hover {
     background: #003d54;
@@ -67,20 +68,16 @@ body {
     cursor: not-allowed;
 }
 
-/* 表格封装容器 */
-.table-wrapper {
-    width: 100%;
-    overflow-x: auto;      /* 关键：横向滚动 */
-    -webkit-overflow-scrolling: touch; /* 移动端更顺滑 */
-    margin-top: 20px;
-}
-
 /* 表格样式 */
 table {
     border-collapse: collapse;
     width: 100%;
-    min-width: 1200px;     /* 保持列宽比例，不至于拥挤 */
+    margin-top: 20px;
     background-color: white;
+}
+
+/* 使用固定表格布局，防止超出容器并让单元格内容换行 */
+table {
     table-layout: fixed;
 }
 
@@ -90,18 +87,72 @@ th, td {
     text-align: left;
 }
 
+/* 表头尽量不换行，保持标题整齐 */
+th {
+    white-space: nowrap;
+}
+
+/* 单元格内容允许换行，并在必要时按词边界断行 */
+td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* 额外的可换行表格类，用于模态详情或其它需要强制换行的表格 */
+.wrap-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.wrap-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.wrap-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* 页面特定：确保学号列在不同页面按列位置单行显示并在溢出时用省略号 */
+.index-page .wrap-table th:nth-child(3),
+.index-page .wrap-table td:nth-child(3) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 仅对批量页主表（#resultsTable）的第2列（学号）强制单行省略号 */
+.batch-page #resultsTable.wrap-table th:nth-child(2),
+.batch-page #resultsTable.wrap-table td:nth-child(2) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 模态详情表：允许表头换行，学号（第3列）单行省略号 */
+.batch-page .details-table th {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.batch-page .details-table th:nth-child(3),
+.batch-page .details-table td:nth-child(3) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 th {
     background-color: #f2f2f2;
     font-weight: bold;
     position: sticky;
     top: 0;
-    white-space: nowrap;
-}
-
-td {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
 }
 
 tr:nth-child(even) {
@@ -112,35 +163,6 @@ tr:hover {
     background-color: #e6f3ff;
 }
 
-/* 响应式 */
-@media (max-width: 768px) {
-    .container {
-        margin: 10px;
-        padding: 15px;
-    }
-
-    .search-box {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .search-box input,
-    .search-box button {
-        width: 100%;
-        margin: 5px 0;
-    }
-
-    table {
-        font-size: 12px;
-    }
-
-    th, td {
-        padding: 8px 4px;
-        white-space: normal;
-        word-break: break-word;
-    }
-}
-
 /* 总计显示 */
 .total {
     margin: 20px 0;
@@ -149,16 +171,6 @@ tr:hover {
     border-left: 4px solid #005375;
     font-weight: bold;
     font-size: 16px;
-
-    display: flex;          /* 横向布局 */
-    flex-wrap: wrap;        /* 允许换行 */
-    align-items: center;    /* 垂直居中 */
-    gap: 10px;              /* 元素之间的间距 */
-}
-
-/* 让“集体总时长”部分保持占据一行的起点 */
-.total span {
-    flex: 0 0 auto;         /* 可以缩放 */
 }
 
 /* 错误信息 */
@@ -203,7 +215,7 @@ tr:hover {
 /* 批量查询特有样式 */
 textarea {
     width: 100%;
-    height: 130px;
+    height: 200px;
     padding: 10px;
     margin: 10px 0;
     border: 1px solid #ddd;
@@ -217,63 +229,42 @@ textarea {
     font-weight: bold;
 }
 
-/* 按钮样式 */
-.total button {
-    background: #005375;
-    color: white;
-    padding: 8px 15px;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    max-width: 400px;       /* 和查询按钮保持一致 */
-}
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        margin: 10px;
+        padding: 15px;
+    }
+    /* 在窄屏上让所有项成为块级并占满宽度，保证对齐 */
+    .search-box {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
-.total button:hover {
-    background: #003f57;
-}
+    .search-box input,
+    .search-box button {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    table {
+        font-size: 12px;
+    }
+    
+    th, td {
+        padding: 8px 4px;
+    }
+    
+    /* 在移动端允许表格内容以及表头自动换行，避免截断或横向滚动 */
+    th {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
 
-/* 批量输入框样式 */
-.search-box textarea {
-    flex: 1;
-    min-width: 150px;
-    max-width: 400px;   /* 比单行输入框稍宽 */
-    min-height: 120px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    resize: vertical;   /* 允许上下拖动调整 */
-}
-
-/* 页面顶部的返回按钮 */
-.back-btn {
-    background: #005375;
-    color: white;
-    padding: 8px 15px;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    margin-bottom: 20px;
-    transition: background-color 0.3s;
-}
-
-.back-btn:hover {
-    background: #003d54;
-}
-
-/* 表格底部复制按钮 */
-.copy-btn {
-    background: #009de0;
-    color: white;
-    padding: 6px 12px;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    margin-left: 10px;
-    font-size: 13px;
-    transition: background-color 0.3s;
-}
-
-.copy-btn:hover {
-    background: #007bb5;
+    td {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
 }
