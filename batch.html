@@ -49,8 +49,9 @@
         <div class="total">
             <span>集体总时长：<span id="grandTotal">0</span> 小时</span>
             <button onclick="copySummaryResults()">复制统计结果</button>
+            <button onclick="exportSummaryToXLSX()">导出统计结果为xlsx</button>
             <button onclick="copyAllDetails()">复制详细结果</button>
-            <button onclick="exportBatchToXLSX()">导出为xlsx</button>
+            <button onclick="exportDetailsToXLSX()">导出详细结果为xlsx</button>
         </div>
     </div>
 
@@ -239,8 +240,50 @@
             utils.copyToClipboard(table);
         }
 
-        // === 新增：导出批量结果为 XLSX ===
-        async function exportBatchToXLSX() {
+        // === 新增：导出统计结果为 XLSX ===
+        async function exportSummaryToXLSX() {
+            const tbody = document.getElementById('resultsBody');
+            if (tbody.children.length === 0 || tbody.textContent.includes('请输入批量查询内容') || tbody.textContent.includes('未找到任何记录')) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+
+            if (!window.latestBatchData || !window.latestBatchData.results) {
+                utils.showError('没有可导出的结果');
+                return;
+            }
+
+            utils.showSuccess('正在准备统计数据，请稍候...');
+            
+            try {
+                const summaryData = window.latestBatchData.results.map(result => ({
+                    '志愿者姓名': result.name,
+                    '志愿者学号': result.student_id, 
+                    '个人总时长（小时）': result.total_duration.toFixed(1)
+                }));
+
+                // 添加集体总时长行
+                summaryData.push({
+                    '志愿者姓名': '集体总时长',
+                    '志愿者学号': '',
+                    '个人总时长（小时）': window.latestBatchData.grand_total.toFixed(1)
+                });
+
+                const ws = XLSX.utils.json_to_sheet(summaryData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "批量查询统计结果");
+                
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                XLSX.writeFile(wb, `批量查询统计结果_${timestamp}.xlsx`);
+
+                utils.showSuccess('统计结果Excel文件已生成！');
+            } catch (error) {
+                utils.showError('导出失败: ' + error.message);
+            }
+        }
+
+        // === 新增：导出详细结果为 XLSX ===
+        async function exportDetailsToXLSX() {
             const tbody = document.getElementById('resultsBody');
             if (tbody.children.length === 0 || tbody.textContent.includes('请输入批量查询内容') || tbody.textContent.includes('未找到任何记录')) {
                 utils.showError('没有可导出的结果');
@@ -254,7 +297,7 @@
                 return;
             }
 
-            utils.showSuccess('正准备Excel数据，请勿重复点击');
+            utils.showSuccess('正在准备详细数据，请稍候...');
             let allDetails = [];
 
             try {
@@ -274,9 +317,11 @@
                 const ws = XLSX.utils.json_to_sheet(orderedDetails, { header: EXPORT_HEADERS });
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "批量志愿服务记录");
-                XLSX.writeFile(wb, "批量志愿服务记录.xlsx");
+                
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                XLSX.writeFile(wb, `批量查询详细结果_${timestamp}.xlsx`);
 
-                utils.showSuccess('Excel文件已生成！');
+                utils.showSuccess('详细结果Excel文件已生成！');
             } catch (error) {
                 utils.showError('导出失败: ' + error.message);
             }
