@@ -9,10 +9,7 @@
 </head>
 <body class="batch-page">
     <div class="container">
-        <button onclick="location.href='index.html'" 
-                style="background: #005375; color: white; padding:8px 15px; border:none; cursor:pointer; border-radius: 4px; margin-bottom: 20px;">
-            ← 返回普通查询
-        </button>
+        <button class="back-btn" onclick="location.href='index.html'">← 返回普通查询</button>
         
         <h1>批量查询</h1>
         
@@ -24,45 +21,36 @@
         <div id="errorMessage" class="error" style="display: none;"></div>
         <div id="successMessage" class="success" style="display: none;"></div>
 
-        <table id="resultsTable">
-            <thead>
-                <tr>
-                    <th>志愿者姓名</th>
-                    <th>志愿者学号</th>
-                    <th>个人总时长（小时）</th>
-                    <th>详细信息</th>
-                </tr>
-            </thead>
-            <colgroup>
-                <col style="width:25%"> <!-- 姓名 (微调更窄) -->
-                <col style="width:22%"> <!-- 学号 (加大以保证一行显示) -->
-                <col style="width:12%"> <!-- 总时长 -->
-                <col style="width:45%"> <!-- 详细按钮/说明 (稍宽以容纳按钮/说明) -->
-            </colgroup>
-            <tbody id="resultsBody">
-                <tr>
-                    <td colspan="4" style="text-align: center; color: #666; padding: 40px;">
-                        请输入批量查询内容
-                    </td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr class="total-row">
-                    <td colspan="2">集体总时长</td>
-                    <td id="grandTotal">0</td>
-                    <td>
-                        <button onclick="copySummaryResults()" 
-                                style="background: #009de0; color: white; padding:6px 12px; border:none; cursor:pointer; border-radius: 4px;">
-                            复制统计结果
-                        </button>
-                        <button onclick="copyAllDetails()"
-                                style="background: #009de0; color: white; padding:6px 12px; border:none; cursor:pointer; border-radius: 4px; margin-left: 10px;">
-                            复制详细结果
-                        </button>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="table-wrapper">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>志愿者姓名</th>
+                        <th>志愿者学号</th>
+                        <th>个人总时长（小时）</th>
+                        <th>详细信息</th>
+                    </tr>
+                </thead>
+                <colgroup>
+                    <col style="width:25%">
+                    <col style="width:22%">
+                    <col style="width:12%">
+                    <col style="width:41%">
+                </colgroup>
+                <tbody id="resultsBody">
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #666; padding: 40px;">
+                            请输入批量查询内容
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="total">
+            <span>集体总时长：<span id="grandTotal">0</span> 小时</span>
+            <button onclick="copySummaryResults()">复制统计结果</button>
+            <button onclick="copyAllDetails()">复制详细结果</button>
+        </div>
     </div>
 
     <!-- 引入脚本 -->
@@ -188,14 +176,15 @@
             const closeBtn = document.createElement('button');
             closeBtn.textContent = '×';
             closeBtn.style.cssText = `
-                position: absolute;
-                top: 10px;
-                right: 15px;
+                position: fixed;      /* 改成 fixed */
+                top: 60px;            /* 距离视口顶部 */
+                right: 60px;          /* 距离视口右侧 */
                 background: none;
                 border: none;
-                font-size: 24px;
+                font-size: 48px;
                 cursor: pointer;
-                color: #666;
+                color: #FFF;
+                z-index: 1100;        /* 确保在模态框之上 */
             `;
             closeBtn.onclick = () => document.body.removeChild(modal);
 

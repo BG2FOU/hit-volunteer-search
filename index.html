@@ -21,48 +21,47 @@
         <div id="errorMessage" class="error" style="display: none;"></div>
         <div id="successMessage" class="success" style="display: none;"></div>
         
-        <table id="resultsTable" class="wrap-table">
-            <thead>
-                <tr>
-                    <th>志愿者姓名</th>
-                    <th>志愿者所在学院</th>
-                    <th>志愿者学号</th>
-                    <th>志愿服务时长</th>
-                    <th>志愿服务活动名称</th>
-                    <th>志愿服务学期</th>
-                    <th>志愿服务日期</th>
-                    <th>志愿服务区域</th>
-                    <th>志愿服务详细地址</th>
-                    <th>活动组织单位</th>
-                </tr>
-            </thead>
-            <colgroup>
-                <col style="width:8%">  <!-- 姓名 -->
-                <col style="width:12%"> <!-- 学院 -->
-                <col style="width:9%">  <!-- 学号-->
-                <col style="width:9%">  <!-- 时长 -->
-                <col style="width:18%"> <!-- 活动名称-->
-                <col style="width:9%">  <!-- 学期 -->
-                <col style="width:9%">  <!-- 日期 -->
-                <col style="width:9%">  <!-- 区域 -->
-                <col style="width:12%"> <!-- 详细地址-->
-                <col style="width:9%">  <!-- 组织单位-->
-            </colgroup>
-            <tbody id="resultsBody">
-                <tr>
-                    <td colspan="10" style="text-align: center; color: #666; padding: 40px;">
-                        请输入查询条件开始搜索
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        
+        <!-- 表格外面包一层 .table-wrapper -->
+        <div class="table-wrapper">
+            <table id="resultsTable" class="wrap-table">
+                <thead>
+                    <tr>
+                        <th>志愿者姓名</th>
+                        <th>志愿者所在学院</th>
+                        <th>志愿者学号</th>
+                        <th>志愿服务时长</th>
+                        <th>志愿服务活动名称</th>
+                        <th>志愿服务学期</th>
+                        <th>志愿服务日期</th>
+                        <th>志愿服务区域</th>
+                        <th>志愿服务详细地址</th>
+                        <th>活动组织单位</th>
+                    </tr>
+                </thead>
+                <colgroup>
+                    <col style="width:8%">  <!-- 姓名 -->
+                    <col style="width:12%"> <!-- 学院 -->
+                    <col style="width:9%">  <!-- 学号-->
+                    <col style="width:9%">  <!-- 时长 -->
+                    <col style="width:18%"> <!-- 活动名称-->
+                    <col style="width:9%">  <!-- 学期 -->
+                    <col style="width:9%">  <!-- 日期 -->
+                    <col style="width:9%">  <!-- 区域 -->
+                    <col style="width:12%"> <!-- 详细地址-->
+                    <col style="width:9%">  <!-- 组织单位-->
+                </colgroup>
+                <tbody id="resultsBody">
+                    <tr>
+                        <td colspan="10" style="text-align: center; color: #666; padding: 40px;">
+                            请输入查询条件开始搜索
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         <div class="total">
-            总志愿服务时长：<span id="totalHours">0</span> 小时
-            <button onclick="copyEntireResults()" 
-                    style="margin-left:20px; background: #005375; color: white; padding:8px 15px; border:none; cursor:pointer; border-radius: 4px;">
-                复制全部结果
-            </button>
+            <span>总志愿服务时长：<span id="totalHours">0</span> 小时</span>
+            <button onclick="copyEntireResults()">复制全部结果</button>
         </div>
     </div>
 
