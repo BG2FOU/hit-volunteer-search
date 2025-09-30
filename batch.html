@@ -58,7 +58,7 @@
     <!-- 引入脚本 -->
     <script src="js/config.js?v=20250915-1"></script>
     <script src="js/api.js?v=20250915-1"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="js/xlsx.full.min.js"></script>
 
     <script>
         // 页面初始化
@@ -70,6 +70,64 @@
                 }
             });
         });
+
+        const SHEETJS_SOURCES = [
+            'js/xlsx.full.min.js',
+            'https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js'
+        ];
+        let sheetjsReadyPromise = null;
+
+        function ensureSheetJS() {
+            if (typeof XLSX !== 'undefined') {
+                return Promise.resolve();
+            }
+
+            if (sheetjsReadyPromise) {
+                return sheetjsReadyPromise;
+            }
+
+            sheetjsReadyPromise = new Promise((resolve, reject) => {
+                let index = 0;
+
+                const tryLoad = () => {
+                    if (typeof XLSX !== 'undefined') {
+                        resolve();
+                        return;
+                    }
+
+                    if (index >= SHEETJS_SOURCES.length) {
+                        reject(new Error('SheetJS脚本加载失败'));
+                        return;
+                    }
+
+                    const url = SHEETJS_SOURCES[index++];
+                    const script = document.createElement('script');
+                    script.src = url;
+                    script.async = true;
+                    script.onload = () => {
+                        if (typeof XLSX !== 'undefined') {
+                            resolve();
+                        } else {
+                            console.warn(`SheetJS加载完成但未发现全局对象，继续尝试下一源: ${url}`);
+                            tryLoad();
+                        }
+                    };
+                    script.onerror = () => {
+                        console.warn(`SheetJS加载失败: ${url}`);
+                        tryLoad();
+                    };
+                    document.head.appendChild(script);
+                };
+
+                tryLoad();
+            }).catch(error => {
+                sheetjsReadyPromise = null;
+                throw error;
+            });
+
+            return sheetjsReadyPromise;
+        }
 
         const EXPORT_HEADERS = [
             '志愿者姓名',
@@ -253,8 +311,21 @@
                 return;
             }
 
+            try {
+                await ensureSheetJS();
+            } catch (loadError) {
+                console.error(loadError);
+                utils.showError('导出功能依赖加载失败，请检查网络或稍后重试');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                utils.showError('导出功能依赖缺失，请刷新页面后重试');
+                return;
+            }
+
             utils.showSuccess('正在准备统计数据，请稍候...');
-            
+
             try {
                 const summaryData = window.latestBatchData.results.map(result => ({
                     '志愿者姓名': result.name,
@@ -294,6 +365,19 @@
                                   .map(btn => btn.getAttribute('onclick').match(/'([^']+)'/)[1]);
             if (studentIds.length === 0) {
                 utils.showError('没有可导出的结果');
+                return;
+            }
+
+            try {
+                await ensureSheetJS();
+            } catch (loadError) {
+                console.error(loadError);
+                utils.showError('导出功能依赖加载失败，请检查网络或稍后重试');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                utils.showError('导出功能依赖缺失，请刷新页面后重试');
                 return;
             }
 
